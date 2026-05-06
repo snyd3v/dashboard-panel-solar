@@ -1,8 +1,8 @@
 "use client";
 import * as React from "react";
-import { Sun, } from "lucide-react";
+import { BatteryCharging, Sun } from "lucide-react";
 import { MetricCard } from "@/src/components/MetricCard";
-import { MetricData, SensoresDB, ChartData } from "@/src/types/dashboard";
+import { MetricData, SensoresDB } from "@/src/types/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { ref, onValue } from "firebase/database";
 import { db } from "@/src/lib/firebase";
@@ -19,7 +19,12 @@ import {
 export default function DashboardPage() {
   const [mounted, setMounted] = React.useState<boolean>(false);
   const [metrics, setMetrics] = React.useState<MetricData[]>([]);
-  const [chartData, setChartData] = React.useState<ChartData[]>([]);
+  const [chartData, setChartData] = React.useState<any[]>([]);
+  const [summary, setSummary] = React.useState({
+    generado: 0,
+    consumo: 0,
+    eficiencia: 0,
+  });
 
   React.useEffect(() => {
     setMounted(true);
@@ -30,8 +35,38 @@ export default function DashboardPage() {
       if (snapshot.exists()) {
         const data = snapshot.val() as SensoresDB;
 
-        console.log(getLastValue(data.PS));
-        setChartData(parseChartData(data.PS));
+        const psData = parseChartData(data.PS);
+        const batData = parseChartData(data.bateria);
+
+        const ps = getLastValue(data.PS);
+        const bat = getLastValue(data.bateria);
+
+        // ⚡ valores en tiempo real
+        const generado = ps.potencia;       // lo que generan los paneles
+        const consumo = bat.potencia > 0 ? bat.potencia : 0;
+        const eficiencia = generado - consumo;
+        setSummary({
+          generado,
+          consumo,
+          eficiencia,
+        });
+
+        // unir por índice (asumiendo mismo tamaño)
+        const merged = psData.map((item, index) => ({
+          fecha: item.fecha,
+
+          // PS
+          voltajePS: item.voltaje,
+          amperajePS: item.amperaje,
+          potenciaPS: item.potencia,
+
+          // Batería
+          voltajeBat: batData[index]?.voltaje ?? 0,
+          amperajeBat: batData[index]?.amperaje ?? 0,
+          potenciaBat: batData[index]?.potencia ?? 0,
+        }));
+
+        setChartData(merged);
 
         const newMetrics: MetricData[] = [
           {
@@ -43,6 +78,15 @@ export default function DashboardPage() {
             icon: Sun,
             status: "Active",
           },
+          {
+            title: "Baterias",
+            voltage: getLastValue(data.bateria).voltaje,
+            current: getLastValue(data.bateria).amperaje,
+            power: getLastValue(data.bateria).potencia,
+            fecha: getLastValue(data.bateria).fecha,
+            icon: BatteryCharging,
+            status: "Active",
+          }
           // {
           //   title: "Paneles Solares",
           //   voltage: data.panel?.voltaje ?? data.voltaje,
@@ -138,7 +182,8 @@ export default function DashboardPage() {
                   <YAxis />
                   <Tooltip />
 
-                  <Line dataKey="voltaje" stroke="#3b82f6" />
+                  <Line name="Voltaje Panel Solar" dataKey="voltajePS" stroke="#3b82f6" />
+                  <Line name="Voltaje Baterias" dataKey="voltajeBat" stroke="#22c55e" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -158,9 +203,18 @@ export default function DashboardPage() {
                   <YAxis />
                   <Tooltip />
                   <Line
+                    name="Corriente Panel Solar"
                     type="monotone"
-                    dataKey="amperaje"
+                    dataKey="amperajePS"
                     stroke="#eab308"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    name="Corriente Baterias"
+                    type="monotone"
+                    dataKey="amperajeBat"
+                    stroke="#f97316"
                     strokeWidth={2}
                     dot={false}
                   />
@@ -169,7 +223,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Potencia */}
         <Card>
           <CardHeader>
@@ -183,7 +237,8 @@ export default function DashboardPage() {
                   <YAxis />
                   <Tooltip />
 
-                  <Line dataKey="potencia" stroke="#ef4444" />
+                  <Line name="Potencia Panel Solar" dataKey="potenciaPS" stroke="#ef4444" />
+                  <Line name="Potencia Baterias" dataKey="potenciaBat" stroke="#f97316" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -212,27 +267,62 @@ export default function DashboardPage() {
       </div> */}
 
       {/* SUMMARY SECTION */}
-      {/* <Card className="bg-linear-to-br from-background to-muted/30 border-border/50">
+      <Card className="bg-linear-to-br from-background to-muted/30 border-border/50">
         <CardContent className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            {/* Generado */}
             <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Generado Total</p>
-              <p className="text-4xl font-black text-foreground">5.72 <span className="text-lg font-bold">W</span></p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Generado Total
+              </p>
+              <p className="text-4xl font-black text-foreground">
+                {summary.generado.toFixed(2)}{" "}
+                <span className="text-lg font-bold">W</span>
+              </p>
             </div>
+
+            {/* Consumo */}
             <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Consumo Total</p>
-              <p className="text-4xl font-black text-foreground">4.50 <span className="text-lg font-bold">W</span></p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Consumo Total
+              </p>
+              <p className="text-4xl font-black text-foreground">
+                {summary.consumo.toFixed(2)}{" "}
+                <span className="text-lg font-bold">W</span>
+              </p>
             </div>
+
+            {/* Eficiencia */}
             <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Eficiencia</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Eficiencia
+              </p>
+
               <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-black text-emerald-500">+1.22 <span className="text-lg font-bold">W</span></p>
-                <div className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500">OPTIMAL</div>
+                <p
+                  className={`text-4xl font-black ${summary.eficiencia >= 0 ? "text-emerald-500" : "text-red-500"
+                    }`}
+                >
+                  {summary.eficiencia >= 0 ? "+" : ""}
+                  {summary.eficiencia.toFixed(2)}{" "}
+                  <span className="text-lg font-bold">W</span>
+                </p>
+
+                <div
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${summary.eficiencia >= 0
+                      ? "bg-emerald-500/10 text-emerald-500"
+                      : "bg-red-500/10 text-red-500"
+                    }`}
+                >
+                  {summary.eficiencia >= 0 ? "OPTIMAL" : "DEFICIT"}
+                </div>
               </div>
             </div>
+
           </div>
         </CardContent>
-      </Card> */}
+      </Card>
     </div>
   );
 }

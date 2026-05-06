@@ -27,7 +27,7 @@ export interface Sensor {
 
 export interface SensoresDB {
   PS: Sensor;
-  bateria?: Sensor;
+  bateria: Sensor;
 }
 
 export interface ChartData {

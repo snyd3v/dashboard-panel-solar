@@ -71,19 +71,19 @@ export default function DashboardPage() {
         const newMetrics: MetricData[] = [
           {
             title: "Paneles Solares",
-            voltage: getLastValue(data.PS).voltaje,
-            current: getLastValue(data.PS).amperaje,
-            power: getLastValue(data.PS).potencia,
-            fecha: getLastValue(data.PS).fecha,
+            voltage: ps.voltaje,
+            current: ps.amperaje,
+            power: ps.potencia,
+            fecha: ps.fecha,
             icon: Sun,
             status: "Active",
           },
           {
             title: "Baterias",
-            voltage: getLastValue(data.bateria).voltaje,
-            current: getLastValue(data.bateria).amperaje,
-            power: getLastValue(data.bateria).potencia,
-            fecha: getLastValue(data.bateria).fecha,
+            voltage: bat.voltaje,
+            current: bat.amperaje,
+            power: bat.potencia,
+            fecha: bat.fecha,
             icon: BatteryCharging,
             status: "Active",
           }

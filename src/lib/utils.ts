@@ -1,12 +1,12 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { Sensor } from "../types/dashboard";
+// import { Sensor } from "../types/dashboard";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const getLastValue = (obj: any): { voltaje: number; amperaje: number; potencia: number; fecha: string } => {
+export const getLastValue = (obj: unknown): { voltaje: number; amperaje: number; potencia: number; fecha: string } => {
   if (!obj) return { voltaje: 0, amperaje: 0, potencia: 0, fecha: "" };
 
   const values = Object.values(obj) as { voltaje: number; amperaje: number; potencia: number; fecha: string }[];
@@ -29,7 +29,7 @@ export const getLastValue = (obj: any): { voltaje: number; amperaje: number; pot
 };
 
 export const parseChartData = (
-  obj: any,
+  obj: unknown,
   dateRange?: { start: string; end: string }
 ) => {
   if (!obj) return [];

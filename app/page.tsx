@@ -19,6 +19,7 @@ import {
 export default function DashboardPage() {
   const [mounted, setMounted] = React.useState<boolean>(false);
   const [metrics, setMetrics] = React.useState<MetricData[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [chartData, setChartData] = React.useState<any[]>([]);
   const [summary, setSummary] = React.useState({
     generado: 0,
@@ -42,7 +43,7 @@ export default function DashboardPage() {
         const bat = getLastValue(data.bateria);
 
         // ⚡ valores en tiempo real
-        const generado = ps.potencia;       // lo que generan los paneles
+        const generado = ps.potencia; // lo que generan los paneles
         const consumo = bat.potencia > 0 ? bat.potencia : 0;
         const eficiencia = generado - consumo;
         setSummary({
@@ -86,7 +87,7 @@ export default function DashboardPage() {
             fecha: bat.fecha,
             icon: BatteryCharging,
             status: "Active",
-          }
+          },
           // {
           //   title: "Paneles Solares",
           //   voltage: data.panel?.voltaje ?? data.voltaje,
@@ -168,7 +169,6 @@ export default function DashboardPage() {
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
         {/* Voltaje */}
         <Card>
           <CardHeader>
@@ -182,8 +182,16 @@ export default function DashboardPage() {
                   <YAxis />
                   <Tooltip />
 
-                  <Line name="Voltaje Panel Solar" dataKey="voltajePS" stroke="#3b82f6" />
-                  <Line name="Voltaje Baterias" dataKey="voltajeBat" stroke="#22c55e" />
+                  <Line
+                    name="Voltaje Panel Solar"
+                    dataKey="voltajePS"
+                    stroke="#3b82f6"
+                  />
+                  <Line
+                    name="Voltaje Baterias"
+                    dataKey="voltajeBat"
+                    stroke="#22c55e"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -237,14 +245,21 @@ export default function DashboardPage() {
                   <YAxis />
                   <Tooltip />
 
-                  <Line name="Potencia Panel Solar" dataKey="potenciaPS" stroke="#ef4444" />
-                  <Line name="Potencia Baterias" dataKey="potenciaBat" stroke="#f97316" />
+                  <Line
+                    name="Potencia Panel Solar"
+                    dataKey="potenciaPS"
+                    stroke="#ef4444"
+                  />
+                  <Line
+                    name="Potencia Baterias"
+                    dataKey="potenciaBat"
+                    stroke="#f97316"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
-
       </div>
 
       {/* CHARTS PLACEHOLDERS */}
@@ -270,7 +285,6 @@ export default function DashboardPage() {
       <Card className="bg-linear-to-br from-background to-muted/30 border-border/50">
         <CardContent className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
             {/* Generado */}
             <div className="space-y-1">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -301,8 +315,11 @@ export default function DashboardPage() {
 
               <div className="flex items-baseline gap-2">
                 <p
-                  className={`text-4xl font-black ${summary.eficiencia >= 0 ? "text-emerald-500" : "text-red-500"
-                    }`}
+                  className={`text-4xl font-black ${
+                    summary.eficiencia >= 0
+                      ? "text-emerald-500"
+                      : "text-red-500"
+                  }`}
                 >
                   {summary.eficiencia >= 0 ? "+" : ""}
                   {summary.eficiencia.toFixed(2)}{" "}
@@ -310,16 +327,16 @@ export default function DashboardPage() {
                 </p>
 
                 <div
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${summary.eficiencia >= 0
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    summary.eficiencia >= 0
                       ? "bg-emerald-500/10 text-emerald-500"
                       : "bg-red-500/10 text-red-500"
-                    }`}
+                  }`}
                 >
                   {summary.eficiencia >= 0 ? "OPTIMAL" : "DEFICIT"}
                 </div>
               </div>
             </div>
-
           </div>
         </CardContent>
       </Card>

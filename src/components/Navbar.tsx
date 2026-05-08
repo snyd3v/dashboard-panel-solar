@@ -30,9 +30,9 @@ export function Navbar() {
               Panel de Control Solar
             </Link>
             <div className="hidden md:flex items-center gap-4 text-sm font-medium">
-               <Link href="/" className="transition-colors text-foreground/60">Tiempo Real</Link>
-               <Link href="/historico" className="transition-colors text-foreground/60">Histórico</Link>
-               <Link href="/all-data" className="transition-colors text-foreground/60">Exportar Datos</Link>
+              <Link href="/" className="transition-colors text-foreground/60">Tiempo Real</Link>
+              <Link href="/historico" className="transition-colors text-foreground/60">Histórico</Link>
+              <Link href="/all-data" className="transition-colors text-foreground/60">Exportar Datos</Link>
             </div>
           </div>
         </div>
@@ -44,13 +44,31 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4 mx-auto">
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-xl font-bold bg-linear-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent">
+          <Link
+            href="/"
+            className="text-xl font-bold bg-linear-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent"
+          >
             Panel de Control Solar
           </Link>
           <div className="hidden md:flex items-center gap-4 text-sm font-medium">
-            <Link href="/" className={`transition-colors hover:text-foreground/80 ${pathname === '/' ? 'text-foreground' : 'text-foreground/60'}`}>Tiempo Real</Link>
-            <Link href="/historico" className={`transition-colors hover:text-foreground/80 ${pathname === '/historico' ? 'text-foreground' : 'text-foreground/60'}`}>Histórico</Link>
-            <Link href="/all-data" className={`transition-colors hover:text-foreground/80 ${pathname === '/all-data' ? 'text-foreground' : 'text-foreground/60'}`}>Exportar Datos</Link>
+            <Link
+              href="/"
+              className={`transition-colors hover:text-foreground/80 ${pathname === "/" ? "text-foreground" : "text-foreground/60"}`}
+            >
+              Tiempo Real
+            </Link>
+            <Link
+              href="/historical-graphs"
+              className={`transition-colors hover:text-foreground/80 ${pathname === "/historical-graphs" ? "text-foreground" : "text-foreground/60"}`}
+            >
+              Histórico Gráficas
+            </Link>
+            <Link
+              href="/all-data"
+              className={`transition-colors hover:text-foreground/80 ${pathname === "/all-data" ? "text-foreground" : "text-foreground/60"}`}
+            >
+              Tabla de Datos
+            </Link>
           </div>
         </div>
 

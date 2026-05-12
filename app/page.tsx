@@ -152,30 +152,21 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
-      {/* HEADER */}
-      {/* <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight lg:text-4xl">
-          Panel de Control Solar
-        </h1>
-        <p className="text-muted-foreground">
-          Sistema de monitoreo de energía fotovoltaica en tiempo real.
-        </p>
-      </div> */}
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+      <div className="grid grid-cols-2 gap-6">
         {metrics.map((metric, index) => (
           <MetricCard key={index} {...metric} />
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {/* Voltaje */}
         <Card>
           <CardHeader>
             <CardTitle>Voltaje (V)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-60">
+            <div className="w-full h-60 md:h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <XAxis dataKey="fecha" />
@@ -204,7 +195,7 @@ export default function DashboardPage() {
             <CardTitle>Corriente (mhA)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-60">
+            <div className="w-full h-60 md:h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <XAxis dataKey="fecha" />
@@ -238,7 +229,7 @@ export default function DashboardPage() {
             <CardTitle>Potencia (mhW)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-60">
+            <div className="w-full h-60 md:h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <XAxis dataKey="fecha" />
@@ -261,25 +252,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* CHARTS PLACEHOLDERS */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-border/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Activity className="h-4 w-4 text-blue-500" /> Histórico de Voltajes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-60 w-full bg-muted/30 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm">
-              <div className="flex flex-col items-center gap-2">
-                <Activity className="h-8 w-8 opacity-20" />
-                <span>Visualización de datos próximamente</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div> */}
 
       {/* SUMMARY SECTION */}
       <Card className="bg-linear-to-br from-background to-muted/30 border-border/50">

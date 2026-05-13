@@ -1,6 +1,6 @@
 "use client"
 import * as React from "react"
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun, Activity, History, Table2 } from "lucide-react"
 import { useTheme } from "next-themes"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -31,7 +31,7 @@ export function Navbar() {
             </Link>
             <div className="hidden md:flex items-center gap-4 text-sm font-medium">
               <Link href="/" className="transition-colors text-foreground/60">Tiempo Real</Link>
-              <Link href="/historico" className="transition-colors text-foreground/60">Histórico</Link>
+              <Link href="/historical-graphs" className="transition-colors text-foreground/60">Histórico</Link>
               <Link href="/all-data" className="transition-colors text-foreground/60">Exportar Datos</Link>
             </div>
           </div>
@@ -41,67 +41,96 @@ export function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4 mx-auto">
-        <div className="flex items-center gap-6">
-          <Link
-            href="/"
-            className="text-xl font-bold bg-linear-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent"
-          >
-            Panel de Control Solar
-          </Link>
-          <div className="hidden md:flex items-center gap-4 text-sm font-medium">
+    <>
+      <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-4 mx-auto">
+          <div className="flex items-center gap-6">
             <Link
               href="/"
-              className={`transition-colors hover:text-foreground/80 ${pathname === "/" ? "text-foreground" : "text-foreground/60"}`}
+              className="text-lg md:text-xl font-bold bg-linear-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent"
             >
-              Tiempo Real
+              Panel de Control
             </Link>
-            <Link
-              href="/historical-graphs"
-              className={`transition-colors hover:text-foreground/80 ${pathname === "/historical-graphs" ? "text-foreground" : "text-foreground/60"}`}
-            >
-              Histórico Gráficas
-            </Link>
-            <Link
-              href="/all-data"
-              className={`transition-colors hover:text-foreground/80 ${pathname === "/all-data" ? "text-foreground" : "text-foreground/60"}`}
-            >
-              Tabla de Datos
-            </Link>
+            <div className="hidden md:flex items-center gap-4 text-sm font-medium">
+              <Link
+                href="/"
+                className={`transition-colors hover:text-foreground/80 ${pathname === "/" ? "text-foreground" : "text-foreground/60"}`}
+              >
+                Tiempo Real
+              </Link>
+              <Link
+                href="/historical-graphs"
+                className={`transition-colors hover:text-foreground/80 ${pathname === "/historical-graphs" ? "text-foreground" : "text-foreground/60"}`}
+              >
+                Histórico Gráficas
+              </Link>
+              <Link
+                href="/all-data"
+                className={`transition-colors hover:text-foreground/80 ${pathname === "/all-data" ? "text-foreground" : "text-foreground/60"}`}
+              >
+                Tabla de Datos
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer h-9 w-9">
+                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => setTheme("light")}
+                >
+                  Light
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => setTheme("dark")}
+                >
+                  Dark
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => setTheme("system")}
+                >
+                  System
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
+      </nav>
 
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer h-9 w-9">
-              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => setTheme("light")}
-              >
-                Light
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => setTheme("dark")}
-              >
-                Dark
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => setTheme("system")}
-              >
-                System
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+        <div className="flex h-16 items-center justify-around px-4">
+          <Link
+            href="/"
+            className={`flex flex-col items-center gap-1 transition-colors ${pathname === "/" ? "text-orange-500" : "text-foreground/60"}`}
+          >
+            <Activity className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Tiempo Real</span>
+          </Link>
+          <Link
+            href="/historical-graphs"
+            className={`flex flex-col items-center gap-1 transition-colors ${pathname === "/historical-graphs" ? "text-orange-500" : "text-foreground/60"}`}
+          >
+            <History className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Histórico</span>
+          </Link>
+          <Link
+            href="/all-data"
+            className={`flex flex-col items-center gap-1 transition-colors ${pathname === "/all-data" ? "text-orange-500" : "text-foreground/60"}`}
+          >
+            <Table2 className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Datos</span>
+          </Link>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }

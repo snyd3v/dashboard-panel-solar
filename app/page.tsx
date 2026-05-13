@@ -154,12 +154,12 @@ export default function DashboardPage() {
     <div className="container mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {metrics.map((metric, index) => (
           <MetricCard key={index} {...metric} />
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Voltaje */}
         <Card>
           <CardHeader>

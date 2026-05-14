@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ref, get, query, limitToLast } from "firebase/database";
+import { ref, get } from "firebase/database";
 import { db } from "@/src/lib/firebase";
 import { Sensor } from "@/src/types/dashboard";
 
@@ -27,32 +27,95 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Formato de mensajes inválido" }, { status: 400 });
     }
 
-    // 1. Intentar obtener datos de Firebase (silencioso si falla)
-    let solarContext = "No hay datos en tiempo real disponibles en este momento.";
+    // 1. Obtener TODOS los datos históricos de Firebase para contexto completo
+    let solarContext = "No hay datos disponibles en este momento.";
     try {
-      const psRef = query(ref(db, "sensores/PS"), limitToLast(1));
-      const batRef = query(ref(db, "sensores/bateria"), limitToLast(1));
-      
+      const psRef = ref(db, "sensores/PS");
+      const batRef = ref(db, "sensores/bateria");
+
       const [psSnap, batSnap] = await Promise.all([get(psRef), get(batRef)]);
-      
-      let psVal: Sensor | null = null;
-      let batVal: Sensor | null = null;
 
-      if (psSnap.exists()) {
-        const val = psSnap.val();
-        psVal = val && typeof val === 'object' ? Object.values(val)[0] : val;
-      }
-      if (batSnap.exists()) {
-        const val = batSnap.val();
-        batVal = val && typeof val === 'object' ? Object.values(val)[0] : val;
-      }
+      // Parsear todos los registros ordenados por fecha
+      const parseSensor = (snap: ReturnType<typeof psSnap.val>): Sensor[] => {
+        if (!snap) return [];
+        const raw = snap as Record<string, Sensor>;
+        return Object.values(raw)
+          .map((item) => ({
+            ...item,
+            fecha: item.fecha?.replace(" ", "T") ?? "",
+          }))
+          .filter((item) => !!item.fecha)
+          .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      };
 
-      if (psVal || batVal) {
-        solarContext = `
-          DATOS ACTUALES DEL SISTEMA:
-          - Paneles: ${psVal ? `${psVal.voltaje || 0}V, ${psVal.amperaje || 0}mA, ${psVal.potencia || 0}mW` : "Sin datos"}
-          - Batería: ${batVal ? `${batVal.voltaje || 0}V, ${batVal.amperaje || 0}mA, ${batVal.potencia || 0}mW` : "Sin datos"}
-        `;
+      // Estadísticas resumen
+      const calcStats = (items: Sensor[]) => {
+        if (!items.length) return null;
+        const voltajes = items.map((i) => i.voltaje ?? 0);
+        const amperajes = items.map((i) => i.amperaje ?? i.corriente ?? 0);
+        const potencias = items.map((i) => i.potencia ?? 0);
+        const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+        const max = (arr: number[]) => Math.max(...arr);
+        const min = (arr: number[]) => Math.min(...arr);
+        return {
+          total: items.length,
+          fechaInicio: items[0].fecha,
+          fechaFin: items[items.length - 1].fecha,
+          voltaje: { avg: avg(voltajes).toFixed(2), max: max(voltajes).toFixed(2), min: min(voltajes).toFixed(2) },
+          amperaje: { avg: avg(amperajes).toFixed(2), max: max(amperajes).toFixed(2), min: min(amperajes).toFixed(2) },
+          potencia: { avg: avg(potencias).toFixed(2), max: max(potencias).toFixed(2), min: min(potencias).toFixed(2) },
+        };
+      };
+
+      // Serializar registros con timestamps: si hay muchos, muestrear para no superar el contexto
+      const MAX_RECORDS = 300;
+      const serializeRecords = (items: Sensor[]): string => {
+        if (!items.length) return "  (sin registros)";
+        const sample =
+          items.length <= MAX_RECORDS
+            ? items
+            : items.filter((_, i) => i % Math.ceil(items.length / MAX_RECORDS) === 0);
+        const note =
+          items.length > MAX_RECORDS
+            ? `  (mostrando ${sample.length} de ${items.length} registros, muestreados uniformemente)\n`
+            : "";
+        const rows = sample
+          .map(
+            (r) =>
+              `  [${r.fecha}] V:${r.voltaje}V  I:${r.amperaje ?? r.corriente ?? 0}mA  P:${r.potencia}mW`
+          )
+          .join("\n");
+        return note + rows;
+      };
+
+      const psItems = psSnap.exists() ? parseSensor(psSnap.val()) : [];
+      const batItems = batSnap.exists() ? parseSensor(batSnap.val()) : [];
+
+      const psStats = calcStats(psItems);
+      const batStats = calcStats(batItems);
+
+      if (psStats || batStats) {
+        const formatSensor = (
+          label: string,
+          s: ReturnType<typeof calcStats>,
+          items: Sensor[]
+        ) => {
+          if (!s) return `${label}: Sin datos.`;
+          return (
+            `=== ${label} ===\n` +
+            `Total registros: ${s.total} | Desde: ${s.fechaInicio} | Hasta: ${s.fechaFin}\n` +
+            `Resumen → Voltaje: prom ${s.voltaje.avg}V / máx ${s.voltaje.max}V / mín ${s.voltaje.min}V\n` +
+            `          Corriente: prom ${s.amperaje.avg}mA / máx ${s.amperaje.max}mA / mín ${s.amperaje.min}mA\n` +
+            `          Potencia: prom ${s.potencia.avg}mW / máx ${s.potencia.max}mW / mín ${s.potencia.min}mW\n` +
+            `Registros detallados (formato: [fecha] V I P):\n` +
+            serializeRecords(items)
+          );
+        };
+
+        solarContext = [
+          formatSensor("PANEL SOLAR (PS)", psStats, psItems),
+          formatSensor("BATERÍA", batStats, batItems),
+        ].join("\n\n");
       }
     } catch (e) {
       console.warn("Error obteniendo contexto de Firebase:", e);
@@ -68,7 +131,7 @@ export async function POST(req: NextRequest) {
 
     La captura de datos se realiza mediante sensores INA, los cuales permiten medir:
     - Voltaje
-    - Amperaje
+    - Amperaje (corriente)
     - Potencia
 
     El objetivo del proyecto es enseñar conceptos relacionados con:
@@ -80,14 +143,15 @@ export async function POST(req: NextRequest) {
 
     Los datos mostrados en el dashboard corresponden a la maqueta/prototipo académico y no a una instalación eléctrica industrial o comercial.
 
-    DATOS ACTUALES DEL SISTEMA:
+    DATOS DEL SISTEMA (HISTÓRICO COMPLETO CON REGISTROS INDIVIDUALES):
     ${solarContext}
 
     INSTRUCCIONES DE RESPUESTA:
     - Responde en español.
     - Sé claro y amigable.
-    - Mantén respuestas cortas (máximo 3 frases).
-    - Si preguntan sobre valores eléctricos o estado del sistema, usa el contexto técnico proporcionado.
+    - Tienes acceso a TODOS los registros históricos con su fecha y hora exacta. Úsalos para responder preguntas sobre rangos de tiempo específicos (ej: "entre las 10:00 y 10:30 de ayer").
+    - Para filtrar por rango de tiempo, analiza las fechas de los registros detallados y selecciona los que caen en el rango pedido.
+    - Si preguntan sobre promedios, máximos, mínimos o tendencias en un período específico, calcula con los registros de ese período.
     - Si preguntan sobre el proyecto, explica que es una maqueta educativa universitaria enfocada en aprendizaje e investigación.
   `;
 

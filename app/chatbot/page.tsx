@@ -13,30 +13,19 @@ interface Message {
   timestamp: string
 }
 
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: 1,
-    role: "assistant",
-    content: "¡Hola! Soy tu asistente solar inteligente. ¿En qué puedo ayudarte hoy?",
-    timestamp: "10:00 AM",
-  },
-  {
-    id: 2,
-    role: "user",
-    content: "¿Cuál ha sido el rendimiento de mis paneles hoy?",
-    timestamp: "10:01 AM",
-  },
-  {
-    id: 3,
-    role: "assistant",
-    content: "Hoy el rendimiento ha sido excelente. Has generado un total de 12.5 kWh hasta ahora, superando el promedio diario en un 15%. La radiación solar máxima se alcanzó a las 12:30 PM.",
-    timestamp: "10:01 AM",
-  },
-]
+
 
 export default function ChatbotPage() {
-  const [messages, setMessages] = React.useState<Message[]>(MOCK_MESSAGES)
+  const [messages, setMessages] = React.useState<Message[]>([
+    {
+      id: 1,
+      role: "assistant",
+      content: "¡Hola! Soy tu asistente solar inteligente. Estoy conectado a tus paneles en tiempo real. ¿Qué deseas saber hoy?",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }
+  ])
   const [input, setInput] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(false)
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   // Scroll to bottom when messages change
@@ -44,13 +33,12 @@ export default function ChatbotPage() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages, isLoading])
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || isLoading) return
 
-    // Solo UI: simulamos que el usuario envía un mensaje
     const userMsg: Message = {
       id: Date.now(),
       role: "user",
@@ -58,19 +46,55 @@ export default function ChatbotPage() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
 
-    setMessages(prev => [...prev, userMsg])
+    const newMessages = [...messages, userMsg]
+    setMessages(newMessages)
     setInput("")
+    setIsLoading(true)
 
-    // Simulamos una respuesta corta para mostrar la UI
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || errorData.error || "Error en la API");
+      }
+
+      const data = await response.json();
+
       const assistantMsg: Message = {
         id: Date.now() + 1,
         role: "assistant",
-        content: "Esta es una respuesta de prueba. Como no hay lógica implementada todavía, solo puedo mostrarte cómo se ve la interfaz. ¡Espero que te guste!",
+        content: data.content || "No recibí una respuesta clara de la IA.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
       setMessages(prev => [...prev, assistantMsg])
-    }, 1000)
+    } catch (error: any) {
+      console.error("Chat Error:", error)
+      const errorMsg: Message = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: `Error: ${error.message}. Por favor, verifica tu conexión y la API Key en .env.local.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+      setMessages(prev => [...prev, errorMsg])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const clearChat = () => {
+    setMessages([
+      {
+        id: Date.now(),
+        role: "assistant",
+        content: "Historial borrado. ¿En qué más puedo ayudarte?",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+    ])
   }
 
   return (
@@ -90,7 +114,12 @@ export default function ChatbotPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-muted-foreground hover:text-destructive transition-colors"
+            onClick={clearChat}
+          >
             <Trash2 size={20} />
           </Button>
         </div>
@@ -129,6 +158,19 @@ export default function ChatbotPage() {
               </div>
             </div>
           ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="flex gap-3 max-w-[85%] md:max-w-[75%] items-center">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-linear-to-tr from-orange-400 to-yellow-500 text-white shadow-sm">
+                  <Sparkles size={16} className="animate-spin" />
+                </div>
+                <div className="bg-muted text-muted-foreground p-3 rounded-2xl rounded-tl-none border border-border/50 text-xs italic">
+                  Analizando datos de Firebase...
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input Form */}
